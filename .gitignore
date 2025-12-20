@@ -1,0 +1,18 @@
+# Ignore dependency folders
+node_modules/
+
+# Ignore Build folders
+dist/
+.next/
+out/
+build/
+
+# Ignore Environment Variables (SECRETS)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Ignore System files
+.DS_Store

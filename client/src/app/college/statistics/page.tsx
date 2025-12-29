@@ -41,6 +41,19 @@ export default function CollegeStatisticsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [exportMessage, setExportMessage] = useState("");
 
+  const filteredTrendData = useMemo(() => {
+    const yearKey = yearFilter.includes("2024") ? "2024" : yearFilter.includes("2023") ? "2023" : "2022";
+    const degreeKey = degreeFilter.includes("B.Tech") ? "B.Tech" : degreeFilter.includes("M.Tech") ? "M.Tech" : "MBA";
+    const branchKey = branchFilter.includes("All") ? "All" : branchFilter.split(": ")[1] || "All";
+
+    return trendData.filter((item) => {
+      const matchesYear = item.year === yearKey;
+      const matchesDegree = item.degree === degreeKey;
+      const matchesBranch = item.branch === "All" || branchKey === "All" || item.branch === branchKey;
+      return matchesYear && matchesDegree && matchesBranch;
+    });
+  }, [yearFilter, degreeFilter, branchFilter]);
+
   const chart = useMemo(() => {
     const width = 600;
     const height = 200;
@@ -88,19 +101,6 @@ export default function CollegeStatisticsPage() {
 
     return filtered.length > 0 ? filtered : recruiters;
   }, [searchTerm, yearFilter, degreeFilter, branchFilter]);
-
-  const filteredTrendData = useMemo(() => {
-    const yearKey = yearFilter.includes("2024") ? "2024" : yearFilter.includes("2023") ? "2023" : "2022";
-    const degreeKey = degreeFilter.includes("B.Tech") ? "B.Tech" : degreeFilter.includes("M.Tech") ? "M.Tech" : "MBA";
-    const branchKey = branchFilter.includes("All") ? "All" : branchFilter.split(": ")[1] || "All";
-
-    return trendData.filter((item) => {
-      const matchesYear = item.year === yearKey;
-      const matchesDegree = item.degree === degreeKey;
-      const matchesBranch = item.branch === "All" || branchKey === "All" || item.branch === branchKey;
-      return matchesYear && matchesDegree && matchesBranch;
-    });
-  }, [yearFilter, degreeFilter, branchFilter]);
 
   const filteredDepartmentData = useMemo(() => {
     const yearKey = yearFilter.includes("2024") ? "2024" : yearFilter.includes("2023") ? "2023" : "2022";

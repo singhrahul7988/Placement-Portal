@@ -96,7 +96,8 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
     });
 
     if (!isPartner) {
-      console.log(`[Job] Failed: No active partnership between ${companyId} and ${collegeId}`);
+      const companyIdLog = String(req.userId);
+      console.log(`[Job] Failed: No active partnership between ${companyIdLog} and ${collegeId}`);
       res.status(403).json({ message: "You must be connected with this college to post jobs." });
       return;
     }

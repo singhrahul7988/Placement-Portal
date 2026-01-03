@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Building2, GraduationCap, School, ArrowRight, Mail, Lock, User } from "lucide-react";
+import { Building2, GraduationCap, School, ArrowRight, Mail, Lock, User, ChevronDown } from "lucide-react";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 
@@ -16,9 +16,22 @@ export default function AuthPage() {
   const [formData, setFormData] = useState({ 
     name: "", 
     email: "", 
-    password: "", 
+    password: "",
+    state: "Punjab",
     collegeId: "" 
   });
+
+  // Indian States & Union Territories
+  const indianStates = [
+    "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam",
+    "Bihar", "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli",
+    "Daman and Diu", "Delhi", "Goa", "Gujarat", "Haryana", "Himachal Pradesh",
+    "Jharkhand", "Karnataka", "Kerala", "Ladakh", "Lakshadweep",
+    "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+    "Nagaland", "Odisha", "Puducherry", "Punjab", "Rajasthan", "Sikkim",
+    "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand",
+    "West Bengal"
+  ].sort();
 
   // Password Change State (For Students)
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -140,6 +153,23 @@ export default function AuthPage() {
               <div className="relative">
                   <User className="absolute left-3 top-3 text-gray-400" size={20} />
                   <input type="text" name="name" placeholder={role === 'company' ? "Company Name" : "College Name"} className="w-full pl-10 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" onChange={handleChange} />
+              </div>
+            )}
+
+            {/* State Field - Only for College Registration */}
+            {!isLogin && role === "college" && (
+              <div className="relative">
+                <select
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none pr-10"
+                >
+                  {indianStates.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-3 text-gray-400 pointer-events-none" size={20} />
               </div>
             )}
 

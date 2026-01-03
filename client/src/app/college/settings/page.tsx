@@ -18,7 +18,19 @@ export default function Settings() {
   const [teamFilter, setTeamFilter] = useState("All");
   
   // Profile State
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", state: "Punjab" });
+  
+  // Indian States & Union Territories
+  const indianStates = [
+    "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam",
+    "Bihar", "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli",
+    "Daman and Diu", "Delhi", "Goa", "Gujarat", "Haryana", "Himachal Pradesh",
+    "Jharkhand", "Karnataka", "Kerala", "Ladakh", "Lakshadweep",
+    "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+    "Nagaland", "Odisha", "Puducherry", "Punjab", "Rajasthan", "Sikkim",
+    "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand",
+    "West Bengal"
+  ].sort();
   
   // Team State
   const [team, setTeam] = useState<any[]>([]);
@@ -37,7 +49,7 @@ export default function Settings() {
         const storedUser = localStorage.getItem("user");
         if(storedUser) {
             const user = JSON.parse(storedUser);
-            setFormData({ name: user.name || "", email: user.email || "", phone: user.phone || "", address: "" });
+            setFormData({ name: user.name || "", email: user.email || "", phone: user.phone || "", address: "", state: user.state || "Punjab" });
             
             // Fetch team only if user is college admin or member
             if(user.role === 'college' || user.role === 'college_member') {
@@ -150,6 +162,19 @@ export default function Settings() {
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-2">Contact Phone</label>
                 <input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg bg-slate-50"/>
+              </div>
+              <div className="relative">
+                <label className="block text-xs font-semibold text-slate-500 mb-2">State</label>
+                <select
+                  value={formData.state}
+                  onChange={(e) => setFormData({...formData, state: e.target.value})}
+                  className="w-full p-3 border border-slate-200 rounded-lg bg-slate-50 appearance-none pr-10"
+                >
+                  {indianStates.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 bottom-3 text-slate-400 pointer-events-none" size={16} />
               </div>
             </div>
             <button onClick={handleSaveProfile} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-blue-700">

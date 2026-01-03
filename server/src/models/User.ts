@@ -13,6 +13,7 @@ export interface IUser extends Document {
   cgpa?: string;
   phone?: string;
   skills?: string;
+  state?: string;
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }
 
@@ -34,6 +35,7 @@ const UserSchema: Schema = new Schema(
     cgpa: { type: String, default: "" },
     phone: { type: String, default: "" },
     skills: { type: String, default: "" },
+    state: { type: String, default: "Punjab" },
   },
   { timestamps: true }
 );

@@ -13,7 +13,7 @@ const generateToken = (id: string) => {
 // @desc    Register a new user (Self Registration)
 // @route   POST /api/auth/register
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
-  const { name, email, password, role, collegeId } = req.body;
+  const { name, email, password, role, collegeId, state } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
@@ -36,6 +36,11 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
         userData.collegeId = collegeId as any; // Cast as any to bypass strict ObjectId checks if string format is valid
     }
 
+    // Add state if provided (for colleges)
+    if (state && typeof state === 'string' && state.trim() !== "") {
+        userData.state = state;
+    }
+
     // Use new User() + save() pattern
     const user = new User(userData);
     await user.save();
@@ -46,6 +51,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
         name: user.name,
         email: user.email,
         role: user.role,
+        state: user.state,
         token: generateToken((user._id as unknown) as string),
       });
     } else {
@@ -97,6 +103,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
         cgpa: user.cgpa,
         phone: user.phone,
         skills: user.skills,
+        state: user.state,
         token: generateToken((user._id as unknown) as string),
       });
     } else {
@@ -244,7 +251,7 @@ export const addStudentsBulk = async (req: Request, res: Response): Promise<void
 };
 
 export const updateUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { name, phone, branch, cgpa, skills } = req.body;
+  const { name, phone, branch, cgpa, skills, state } = req.body;
 
   try {
     if (!req.userId) {
@@ -260,6 +267,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
       user.branch = branch || user.branch;
       user.cgpa = cgpa || user.cgpa;
       user.skills = skills || user.skills;
+      if (state) user.state = state;
 
       const updatedUser = await user.save();
 
@@ -272,6 +280,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
         cgpa: updatedUser.cgpa,
         phone: updatedUser.phone,
         skills: updatedUser.skills,
+        state: updatedUser.state,
         collegeId: updatedUser.role === 'college' ? updatedUser._id : updatedUser.collegeId,
         token: req.headers.authorization?.split(" ")[1] 
       });

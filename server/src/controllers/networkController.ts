@@ -180,7 +180,7 @@ export const getAllColleges = async (req: AuthRequest, res: Response): Promise<v
             return;
         }
 
-        const colleges = await User.find({ role: 'college' }).select('name email branch');
+        const colleges = await User.find({ role: 'college' }).select('name email branch state');
         res.json(colleges);
     } catch (error: any) {
         res.status(500).json({ message: error.message });

@@ -1,13 +1,14 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Moon } from "lucide-react";
+import { Bell, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
+import api from "@/lib/api";
 
 type NotificationItem = {
   id: string;
   title: string;
   detail: string;
-  time: string;
+  createdAt?: string;
   read?: boolean;
 };
 
@@ -18,36 +19,16 @@ type TopBarActionsProps = {
   showNotifications?: boolean;
 };
 
-const defaultNotifications: NotificationItem[] = [
-  {
-    id: "notice-1",
-    title: "New request received",
-    detail: "A partner sent a new drive request.",
-    time: "2h ago",
-  },
-  {
-    id: "notice-2",
-    title: "Report ready",
-    detail: "Placement summary report finished generating.",
-    time: "Yesterday",
-  },
-  {
-    id: "notice-3",
-    title: "Upcoming deadline",
-    detail: "Interview slot confirmations due today.",
-    time: "Today",
-  },
-];
-
 export default function TopBarActions({
   settingsPath,
-  notifications = defaultNotifications,
+  notifications,
   showSettings = true,
   showNotifications = true,
 }: TopBarActionsProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<NotificationItem[]>(notifications);
+  const [items, setItems] = useState<NotificationItem[]>(notifications || []);
+  const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const unreadCount = useMemo(
@@ -55,8 +36,32 @@ export default function TopBarActions({
     [items]
   );
 
+  const loadNotifications = async () => {
+    if (notifications) return;
+    try {
+      setLoading(true);
+      const { data } = await api.get("/api/notifications");
+      const mapped = (data || []).map((item: any) => ({
+        id: item._id,
+        title: item.title,
+        detail: item.detail,
+        createdAt: item.createdAt,
+        read: item.read,
+      }));
+      setItems(mapped);
+    } catch {
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setItems(notifications);
+    if (notifications) {
+      setItems(notifications);
+      return;
+    }
+    loadNotifications();
   }, [notifications]);
 
   useEffect(() => {
@@ -80,7 +85,35 @@ export default function TopBarActions({
   }, [open]);
 
   const markAllRead = () => {
-    setItems((prev) => prev.map((item) => ({ ...item, read: true })));
+    if (notifications) {
+      setItems((prev) => prev.map((item) => ({ ...item, read: true })));
+      return;
+    }
+    api
+      .put("/api/notifications/read", { markAll: true })
+      .then(() => loadNotifications())
+      .catch(() => setItems((prev) => prev.map((item) => ({ ...item, read: true }))));
+  };
+
+  useEffect(() => {
+    if (open && !notifications) {
+      loadNotifications();
+    }
+  }, [open, notifications]);
+
+  const formatTime = (dateString?: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "";
+    const diff = Date.now() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   return (
@@ -90,10 +123,10 @@ export default function TopBarActions({
           type="button"
           onClick={() => router.push(settingsPath)}
           className="h-9 w-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500"
-          aria-label="Open appearance settings"
-          title="Appearance settings"
+          aria-label="Open profile settings"
+          title="Profile settings"
         >
-          <Moon size={16} />
+          <Settings size={16} />
         </button>
       )}
       {showNotifications && (
@@ -125,7 +158,11 @@ export default function TopBarActions({
                 </button>
               </div>
               <div className="max-h-64 overflow-y-auto">
-                {items.length === 0 ? (
+                {loading ? (
+                  <div className="px-4 py-6 text-xs text-slate-500 text-center">
+                    Loading notifications...
+                  </div>
+                ) : items.length === 0 ? (
                   <div className="px-4 py-6 text-xs text-slate-500 text-center">
                     No new notifications.
                   </div>
@@ -139,7 +176,9 @@ export default function TopBarActions({
                     >
                       <div className="text-sm font-semibold text-slate-800">{item.title}</div>
                       <div className="text-xs text-slate-500 mt-1">{item.detail}</div>
-                      <div className="text-[11px] text-slate-400 mt-2">{item.time}</div>
+                      <div className="text-[11px] text-slate-400 mt-2">
+                        {formatTime(item.createdAt)}
+                      </div>
                     </div>
                   ))
                 )}

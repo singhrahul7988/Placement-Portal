@@ -7,6 +7,8 @@ import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 import jobRoutes from './routes/jobRoutes';         // <--- WAS MISSING
 import networkRoutes from './routes/networkRoutes'; // <--- WAS MISSING
+import placementRoutes from './routes/placementRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 
 dotenv.config();
 connectDB();
@@ -20,6 +22,8 @@ app.use(cors());
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);        // <--- WAS MISSING (Fixes Job Feed 404)
 app.use('/api/network', networkRoutes); // <--- WAS MISSING (Fixes Partnership 404)
+app.use('/api/placements', placementRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running...');

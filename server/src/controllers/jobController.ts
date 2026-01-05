@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Job from '../models/Job';
 import Partnership from '../models/Partnership';
 import User from '../models/User';
+import { createNotificationsForUsers, getCollegeTeamUserIds } from '../utils/notificationUtils';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -43,7 +44,7 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
       return;
     }
 
-    const requester = await User.findById(req.userId).select('role');
+    const requester = await User.findById(req.userId).select('role name');
     if (!requester || requester.role !== 'company') {
       res.status(403).json({ message: "Only companies can create drives." });
       return;
@@ -120,6 +121,13 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
 
     await job.save();
     console.log(`[Job] Job created successfully: ${job._id}`);
+
+    const collegeTeam = await getCollegeTeamUserIds(String(collegeObjectId));
+    await createNotificationsForUsers(collegeTeam, {
+      type: "drive_posted",
+      title: "New drive posted",
+      detail: `${requester.name || "A company"} posted ${title}.`,
+    });
 
     res.status(201).json(job);
   } catch (error: any) {
@@ -265,6 +273,65 @@ export const getJobsForCollege = async (req: Request, res: Response): Promise<vo
     res.json(jobs);
   } catch (error: any) {
     console.error("[Job Feed] Error:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update Job Status
+// @route   PUT /api/jobs/:id/status
+export const updateJobStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const authReq = req as AuthRequest;
+    if (!authReq.userId) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["Open", "Closed", "Interviewing"].includes(status)) {
+      res.status(400).json({ message: "Invalid status value." });
+      return;
+    }
+
+    const job = await Job.findById(id).populate("companyId", "name");
+    if (!job) {
+      res.status(404).json({ message: "Job not found." });
+      return;
+    }
+
+    const requester = await User.findById(authReq.userId).select("role collegeId");
+    if (!requester) {
+      res.status(404).json({ message: "User not found." });
+      return;
+    }
+
+    const jobCompanyId = String((job.companyId as any)?._id ?? job.companyId);
+    const jobCollegeId = String(job.collegeId);
+    const requesterCollegeId = requester.collegeId ? String(requester.collegeId) : "";
+
+    const isCompanyOwner = requester.role === "company" && String(requester._id) === jobCompanyId;
+    const isCollegeOwner = requester.role === "college" && String(requester._id) === jobCollegeId;
+    const isCollegeMember = requester.role === "college_member" && requesterCollegeId === jobCollegeId;
+
+    if (!isCompanyOwner && !isCollegeOwner && !isCollegeMember) {
+      res.status(403).json({ message: "Not authorized to update this job." });
+      return;
+    }
+
+    job.status = status;
+    await job.save();
+
+    const companyId = jobCompanyId ? [jobCompanyId] : [];
+    await createNotificationsForUsers(companyId, {
+      type: "drive_status",
+      title: "Drive status updated",
+      detail: `${job.title} is now marked ${status}.`,
+    });
+
+    res.json(job);
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };

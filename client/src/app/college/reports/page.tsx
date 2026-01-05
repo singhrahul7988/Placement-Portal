@@ -9,6 +9,7 @@ import {
   RotateCcw
 } from "lucide-react";
 import TopBarActions from "../../../components/TopBarActions";
+import api from "@/lib/api";
 
 const quickReports = [
   {
@@ -120,6 +121,10 @@ export default function CollegeReportsPage() {
           report.id === id ? { ...report, status: "Ready" } : report
         )
       );
+      api.post("/api/notifications/report-ready", {
+        title: "Report ready",
+        detail: `${reportType} report for ${batchYear} is ready.`,
+      }).catch(() => null);
       timeoutRef.current = null;
     }, 1200);
   };

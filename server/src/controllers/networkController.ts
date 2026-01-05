@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Partnership from '../models/Partnership';
 import User from '../models/User';
+import { createNotificationsForUsers, getCollegeTeamUserIds } from '../utils/notificationUtils';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -34,8 +35,8 @@ export const sendConnectionRequest = async (req: AuthRequest, res: Response): Pr
       return;
     }
 
-    const requester = await User.findById(requesterId).select('role');
-    const recipient = await User.findById(recipientId).select('role');
+    const requester = await User.findById(requesterId).select('role name');
+    const recipient = await User.findById(recipientId).select('role name');
 
     if (!requester || !recipient) {
       res.status(404).json({ message: "Requester or recipient not found." });
@@ -81,6 +82,15 @@ export const sendConnectionRequest = async (req: AuthRequest, res: Response): Pr
       status: 'Pending',
       pairKey
     });
+
+    if (requester.role === 'company' && recipient.role === 'college') {
+      const userIds = await getCollegeTeamUserIds(String(recipient._id));
+      await createNotificationsForUsers(userIds, {
+        type: "company_request",
+        title: "New company request",
+        detail: `${requester.name || "A company"} sent a partnership request.`,
+      });
+    }
 
     res.status(201).json(partnership);
   } catch (error: any) {
